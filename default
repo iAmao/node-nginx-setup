@@ -1,0 +1,56 @@
+server {
+    listen 80;
+
+    root /var/www/YOUR_DIRECTORY;
+    index index.php index.html index.htm;
+
+    ###################################################
+    # Change "_" to your host name
+
+    server_name _;
+
+    location / {
+        proxy_pass http://localhost:8080;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_cache_bypass $http_upgrade;
+    }
+
+    location /site/ {
+      if (!-e $request_filename){
+        rewrite ^/site/(.*)$ /site/index.php break;
+      }
+    }
+
+    location ~ \.php$ {
+        try_files $uri =404;
+        fastcgi_pass unix:/var/run/php5-fpm.sock;
+        fastcgi_index index.php;
+        fastcgi_param PATH_TO_FRAMEWORKS /var/www/frameworks/;
+        fastcgi_param CORE_TYPE frameworks;
+        fastcgi_param IS_DEV true;
+        include fastcgi_params;
+    }
+
+    location = /favicon.ico {
+        log_not_found off;
+        access_log off;
+    }
+
+    location = /robots.txt {
+        allow all;
+        log_not_found off;
+        access_log off;
+    }
+
+    location ~ /\. {
+        deny all;
+    }
+
+    location ~* /(?:uploads|files)/.*\.php$ {
+        deny all;
+    }
+
+}
